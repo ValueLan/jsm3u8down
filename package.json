@@ -3,6 +3,7 @@
     "start": "node main"
   },
   "devDependencies": {
+    "fluent-ffmpeg": "^2.1.2",
     "node-fetch": "^2.6.0"
   }
 }
