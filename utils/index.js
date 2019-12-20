@@ -66,7 +66,7 @@ const utils = {
     return _download().then(([err, _]) => {
       if (err) return [true];
       return new Promise(async function (r) {
-        await utils.createFolder(path.dirname(filename));
+        await utils.createFolder(path.resolve(path.dirname(filename)));
         fs.writeFile(filename, _, "binary", function (err) {
           if (err) return r([err])
           r([, filename]);

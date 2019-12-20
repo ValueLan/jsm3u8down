@@ -24,7 +24,7 @@ module.exports = async function (m3u8Url, outputName) {
     return false
   })
 
-  let folder = './__temp' + (Math.random() * 1000000 >> 0);
+  let folder = `./__temp__${Math.random() * 10000 >> 0}__${+new Date()}__`;
 
   let pg = progress()
   let promiseData = {};
@@ -35,7 +35,6 @@ module.exports = async function (m3u8Url, outputName) {
     if (array.length >= 10) {
       let [err, data, id] = await Promise.race(array);
       if (err) {
-        // 失败可以重新处理
         console.log('下载失败', data, id)
       }
       pg.render({ completed: ++success, total: (html.length - 1) })
@@ -44,19 +43,21 @@ module.exports = async function (m3u8Url, outputName) {
       let _path = html[i];
       let filePath = path.join(folder, _path.split('/').pop());
       let id = i;
-      promiseData[id] = utils.download(pre + _path, filePath).then(function (res) {
-        res[2] = id;
-        return res
+      promiseData[id] = utils.download(pre + _path, filePath).then(function ([err]) {
+        return [err, _path, id]
       })
       i++;
     }
     if (i >= html.length) {
       for await (let [err, data, id] of utils.getYield(array)) {
         if (err) {
-          console.log('下载失败', data, id)
+          console.log('下载失败', data, id);
         }
         pg.render({ completed: ++success, total: (html.length - 1) })
       }
+    }
+
+    if (i >= html.length) {
       break;
     }
   }
