@@ -8,7 +8,9 @@ const progress = require('./utils/progress');
 
 module.exports = async function (m3u8Url, outputName) {
   let thisUrl = url.parse(m3u8Url);
-  let html = await fetch(thisUrl.href).then((res) => {
+  let html = await fetch(thisUrl.href, {
+    timeout: 60000
+  }).then((res) => {
     return res.text()
   });
   let pre = thisUrl.protocol + '//' + thisUrl.host;
@@ -23,7 +25,6 @@ module.exports = async function (m3u8Url, outputName) {
   })
 
   let folder = './__temp' + (Math.random() * 1000000 >> 0);
-  await utils.createFolder(folder);
 
   let pg = progress()
   let promiseData = {};

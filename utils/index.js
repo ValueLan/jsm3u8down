@@ -45,25 +45,29 @@ const utils = {
     }
   },
 
-  download(url, filename, _follder = './') {
+  download(url, filename) {
     let _downCount = 0;
     function _download() {
       filename = filename || url.split('/').pop();
-      return fetch(url, {}).then(async (res) => {
-        if (res.status != 200 && ++_downCount < 5) {
-          await utils.sleep(1000 * Math.pow(_downCount, 2));
-          return _download();
-        } else {
-          return res.buffer()
-        }
+      _downCount++;
+      return fetch(url, {
+        timeout: 60000
+      }).then(async (res) => {
+        if (res.status != 200 && _downCount < 10) return [{ msg: '超时' }];
+        return res.buffer().then(function (_) {
+          return [, _]
+        })
+      }).then(function ([err, res]) {
+        if (err) return _download()
+        return [err, res];
       })
     }
 
-    let buffer = _download();
-    return buffer.then(_ => {
-      if (!_) return [true];
+    return _download().then(([err, _]) => {
+      if (err) return [true];
       return new Promise(function (r) {
-        fs.writeFile(path.join(_follder, filename), _, "binary", function (err) {
+        await utils.createFolder(path.dirname(filename));
+        fs.writeFile(filename, _, "binary", function (err) {
           if (err) return r([err])
           r([, filename]);
         });
