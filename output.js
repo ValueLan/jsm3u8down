@@ -23,9 +23,7 @@ module.exports = async function (m3u8Url, outputName) {
   })
 
   let folder = './__temp' + (Math.random() * 1000000 >> 0);
-  try {
-    fs.mkdirSync(folder);
-  } catch (e) { }
+  await utils.createFolder(folder);
 
   let pg = progress()
   let promiseData = {};
@@ -62,14 +60,16 @@ module.exports = async function (m3u8Url, outputName) {
     }
   }
 
-  return new Promise(function (r) {
+  return new Promise(async function (r) {
     try {
       let arr = []
       for (let key of filelist) {
         arr.push(`file ${key}`);
       }
+      await utils.createFolder(path.dirname(outputName));
+      await utils.sleep(1000)
       fs.writeFileSync(`${folder}/filelist.txt`, arr.join('\n'));
-      execSync(`ffmpeg -f concat -safe 0 -i ${folder}/filelist.txt -c copy ${outputName}`);
+      execSync(`ffmpeg -f concat -safe 0 -i ${folder}/filelist.txt -c copy "${outputName}"`);
       r([]);
     } catch (e) {
       r([e])

@@ -3,6 +3,7 @@ const fetch = require("node-fetch");
 const fs = require("fs");
 
 const utils = {
+  createFolder: require('./createFolder'),
   sleep(t = 1000) {
     return new Promise(function (r) {
       setTimeout(r, t);
