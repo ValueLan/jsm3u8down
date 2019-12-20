@@ -24,7 +24,7 @@ module.exports = async function (m3u8Url, outputName) {
     return false
   })
 
-  let folder = `./.__temp__${Math.random() * 10000 >> 0}__${+new Date()}__`;
+  let folder = `./.temp__${Math.random() * 10000 >> 0}__${+new Date()}__`;
 
   let pg = progress()
   let promiseData = {};
