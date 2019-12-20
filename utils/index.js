@@ -8,7 +8,26 @@ const utils = {
       setTimeout(r, t);
     });
   },
-
+  async *getYield(list) {
+    let newList = {};
+    list.map((item, index) => {
+      newList[index] = Promise.resolve(item).then((data) => {
+        return { data, index }
+      })
+    });
+    async function* go() {
+      let val = Object.values(newList);
+      if (val.length == 0) return;
+      let res = Promise.race(val).then(({ data, index }) => {
+        delete newList[index];
+        return data;
+      })
+      yield res;
+      await res
+      yield* go();
+    }
+    return yield* go();
+  },
   deleteall(path) {
     var files = [];
     if (fs.existsSync(path)) {

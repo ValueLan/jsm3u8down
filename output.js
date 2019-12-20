@@ -1,10 +1,10 @@
 const fetch = require("node-fetch");
 const fs = require("fs");
 const url = require('url');
-const utils = require('./utils');
-const execSync = require('child_process').execSync
 const path = require('path')
-
+const execSync = require('child_process').execSync;
+const utils = require('./utils');
+const progress = require('./utils/progress');
 
 module.exports = async function (m3u8Url, outputName) {
   let thisUrl = url.parse(m3u8Url);
@@ -16,26 +16,30 @@ module.exports = async function (m3u8Url, outputName) {
 
   html = html.split('\n').filter(function (url) {
     if (/\.ts$/.test(url)) {
-      filelist.push('file ' + url.split('/').pop());
+      filelist.push(url.split('/').pop());
       return true;
     }
     return false
   })
 
-  let folder = './_temp' + (Math.random() * 1000000 >> 0);
+  let folder = './__temp' + (Math.random() * 1000000 >> 0);
   try {
     fs.mkdirSync(folder);
-  } catch (e) {
-  }
+  } catch (e) { }
 
-  fs.writeFile(`${folder}/filelist.txt`, filelist.join('\n'), function () { });
+  let pg = progress()
   let promiseData = {};
   let i = 0;
+  let success = 0;
   while (true) {
     let array = Object.values(promiseData);
-    if (array.length >= 5) {
+    if (array.length >= 10) {
       let [err, data, id] = await Promise.race(array);
-      console.log('完成' + id);
+      if (err) {
+        // 失败可以重新处理
+        console.log('下载失败', data, id)
+      }
+      pg.render({ completed: ++success, total: (html.length - 1) })
       delete promiseData[id];
     } else {
       let _path = html[i];
@@ -48,16 +52,33 @@ module.exports = async function (m3u8Url, outputName) {
       i++;
     }
     if (i >= html.length) {
-      await Promise.all(array);
+      for await (let [err, data, id] of utils.getYield(array)) {
+        if (err) {
+          console.log('下载失败', data, id)
+        }
+        pg.render({ completed: ++success, total: (html.length - 1) })
+      }
       break;
     }
   }
 
-  try {
-    execSync(`ffmpeg -f concat -i ${folder}/filelist.txt -c copy ${outputName}`);
-  } catch (ex) {
-    return ['导出失败']
-  }
-  utils.deleteall(folder)
-  return [];
+  return new Promise(function (r) {
+    try {
+      let arr = []
+      for (let key of filelist) {
+        arr.push(`file ${key}`);
+      }
+      fs.writeFileSync(`${folder}/filelist.txt`, arr.join('\n'));
+      execSync(`ffmpeg -f concat -safe 0 -i ${folder}/filelist.txt -c copy ${outputName}`);
+      r([]);
+    } catch (e) {
+      r([e])
+    }
+  }).then(function ([e, data]) {
+    if (e) {
+      console.log(e)
+    }
+    utils.deleteall(folder)
+    return [e, data]
+  });
 }
