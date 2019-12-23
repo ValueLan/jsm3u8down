@@ -4,9 +4,9 @@ const fs = require("fs");
 
 const utils = {
   createFolder: require('./createFolder'),
-  sleep(t = 1000) {
+  sleep(t = 1000, ...args) {
     return new Promise(function (r) {
-      setTimeout(r, t);
+      setTimeout(r, t, ...args);
     });
   },
   async *getYield(list) {
@@ -53,18 +53,20 @@ const utils = {
       return fetch(url, {
         timeout: 60000
       }).then(async (res) => {
-        if (res.status != 200 && _downCount < 10) return [{ msg: '超时' }];
-        return res.buffer().then(function (_) {
-          return [, _]
-        })
-      }).then(function ([err, res]) {
-        if (err) return _download()
-        return [err, res];
+        if (res.status == 200) {
+          return res.buffer().then(function (_) {
+            return [, _]
+          })
+        }
+        if (_downCount < 10) {
+          return _download();
+        }
+        return [{ msg: 'timeout' }]
       })
     }
 
     return _download().then(([err, _]) => {
-      if (err) return [true];
+      if (err) return [err];
       return new Promise(async function (r) {
         await utils.createFolder(path.resolve(path.dirname(filename)));
         fs.writeFile(filename, _, "binary", function (err) {
