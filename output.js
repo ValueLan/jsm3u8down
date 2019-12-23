@@ -97,7 +97,7 @@ module.exports = async function (m3u8Url, outputName) {
     try {
       await utils.createFolder(path.dirname(outputName));
       fs.writeFileSync(`${folder}/filelist.txt`, filelist.join('\n'));
-      execSync(`./plugins/ffmpeg -f concat -safe 0 -i ${folder}/filelist.txt -c copy "${outputName}"`);
+      execSync(`ffmpeg -f concat -safe 0 -i ${folder}/filelist.txt -c copy "${outputName}"`);
       r([]);
     } catch (e) {
       r([e])
